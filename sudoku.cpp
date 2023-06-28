@@ -1,11 +1,83 @@
-#include<iostream>
+#include <iostream>
+#include <fstream>
+#include <string>
 using namespace std;
+ifstream  fin;
+ofstream fout;
 
 int sudoku[11][11];  // Sudoku, a 2d rray
 int ans_num = 0;  // The number of answers
+int seed[9];  // A seed used for generating a sudoku (Actually it is the order of the 9 numbers in the very middle cell of a sudoku. )
+/* config */
+const string puzzle_path = "D:\\Codes\\vs2019\\Sudoku\\Sudoku\\data\\puzzles.txt";
+const string solution_path = "D:\\Codes\\vs2019\\Sudoku\\Sudoku\\data\\solutions.txt";
+int seed_num = 0;  // The number of seeds, and sudokus at the same time, to be generated
+
+/* Utilities */
+void inline display_seed(int* seed) {
+	cout << "Seed: ";
+	for (int i = 0; i < 9; i++) {
+		cout << seed[i] << " ";
+	}
+	cout << endl;
+}
+
+void inline display_sudoku(int sudoku[][11]) {
+	for (int i = 1; i <= 9; i++)
+	{
+		for (int j = 1; j <= 9; j++)
+		{
+			if ((i == 4 && j == 1) || (i == 7 && j == 1))
+			{
+				cout << "---------------------" << endl;
+			}
+			else if (j == 4 || j == 7)
+			{
+				cout << "| ";
+			}
+			cout << sudoku[i][j] << " ";
+		}
+		cout << endl;
+	}
+	cout << endl;
+}
+
+void save_sudoku(int sudoku[][11], bool is_first = false, bool display = false, string path = puzzle_path) {
+	if (is_first) {
+		fout.open(path, ios::out);
+	}
+	else {
+		fout.open(path, ios::app);
+	}
+	if (!fout.is_open()) {
+		std::cerr << "Cannot open the file!\n";
+	}
+	for (int i = 1; i <= 9; i++)
+	{
+		for (int j = 1; j <= 9; j++)
+		{
+			if ((i == 4 && j == 1) || (i == 7 && j == 1))
+			{
+				fout << "---------------------" << endl;
+			}
+			else if (j == 4 || j == 7)
+			{
+				fout << "| ";
+			}
+			fout << sudoku[i][j] << " ";
+		}
+		fout << endl;
+	}
+	fout << endl;
+	fout.close();
+	if (display) {
+		display_sudoku(sudoku);
+	}
+}
 
 /* Generating */
-void gen_sudoku(int** sudoku, int* seed) {
+// Generat a sudoku with a seed
+void gen_sudoku(int sudoku[][11], int* seed) {
 	// Step 1: Generate the very middle cell of the sudoku with a 9-length seed (1D array)
 	int si = 0;
 	for (int i = 4; i <= 6; i++) {
@@ -15,7 +87,7 @@ void gen_sudoku(int** sudoku, int* seed) {
 	}
 	// Step 2: Generate surrounding four cells (top, bottom, left and right) by rolling the middle cell 
 	for (int i = 4; i <= 6; i++) {
-		int bias = 0;
+		int bias = 1;
 		for (int j = 4; j <= 6; j++) {
 			if (i == 4) {
 				sudoku[i + 1][bias] = sudoku[i][j];
@@ -34,10 +106,101 @@ void gen_sudoku(int** sudoku, int* seed) {
 			}
 		}
 	}
+	for (int j = 4; j <= 6; j++) {
+		int bias = 1;
+		for (int i = 4; i <= 6; i++) {
+			if (j == 4) {
+				sudoku[bias][j + 1] = sudoku[i][j];
+				sudoku[bias + 6][j + 2] = sudoku[i][j];
+				bias++;
+			}
+			else if (j == 5) {
+				sudoku[bias][j + 1] = sudoku[i][j];
+				sudoku[bias + 6][j - 1] = sudoku[i][j];
+				bias++;
+			}
+			else if (j == 6) {
+				sudoku[bias][j - 2] = sudoku[i][j];
+				sudoku[bias + 6][j - 1] = sudoku[i][j];
+				bias++;
+			}
+		}
+	}
 	// Step 3: Generate the four corner cells the same way as Step 2
-
+	for (int i = 1; i <= 3; i++) {
+		int bias = 1;
+		for (int j = 4; j <= 6; j++) {
+			if (i == 1) {
+				sudoku[i + 1][bias] = sudoku[i][j];
+				sudoku[i + 2][bias + 6] = sudoku[i][j];
+				bias++;
+			}
+			else if (i == 2) {
+				sudoku[i + 1][bias] = sudoku[i][j];
+				sudoku[i - 1][bias + 6] = sudoku[i][j];
+				bias++;
+			}
+			else if (i == 3) {
+				sudoku[i - 2][bias] = sudoku[i][j];
+				sudoku[i - 1][bias + 6] = sudoku[i][j];
+				bias++;
+			}
+		}
+	}
+	for (int i = 7; i <= 9; i++) {
+		int bias = 1;
+		for (int j = 4; j <= 6; j++) {
+			if (i == 7) {
+				sudoku[i + 1][bias] = sudoku[i][j];
+				sudoku[i + 2][bias + 6] = sudoku[i][j];
+				bias++;
+			}
+			else if (i == 8) {
+				sudoku[i + 1][bias] = sudoku[i][j];
+				sudoku[i - 1][bias + 6] = sudoku[i][j];
+				bias++;
+			}
+			else if (i == 9) {
+				sudoku[i - 2][bias] = sudoku[i][j];
+				sudoku[i - 1][bias + 6] = sudoku[i][j];
+				bias++;
+			}
+		}
+	}
 }
-
+// Generate seeds with backtracking algorithm, and generate sudokus with these seeds
+const int sudoku_n = 9;
+int res[9];  // Record the result
+bool line[10] = { false };  // Record whether a number has been included in array "res"
+int cur_seed_num = 0;  // The number of seeds generated for now
+bool has_printed = false;
+void gen_seed_sudoku(int seed_num, int max_n = sudoku_n, int index = 0) {
+	// Param "index" should be 0 while using this function from outside scope.  
+	if (cur_seed_num >= seed_num) {
+		if (!has_printed) {
+			cout << cur_seed_num << " seeds (and sudokus at the same time) have been generated.\n";
+			has_printed = true;
+		}
+		return;
+	}
+	if (index == max_n) {
+		for (int i = 0; i < max_n; i++) {
+			seed[i] = res[i];
+		}
+		gen_sudoku(sudoku, seed);
+		save_sudoku(sudoku, cur_seed_num == 0 ? true : false);
+		cur_seed_num++;
+		return;
+	}
+	for (int i = 1; i <= max_n; i++) {
+		if (line[i] == false) {
+			res[index] = i;
+			line[i] = true;
+			gen_seed_sudoku(seed_num, max_n, index + 1);
+			line[i] = false;
+		}
+	}
+}
 
 /* Solving */
 bool checkX(int x)
@@ -57,7 +220,7 @@ bool checkX(int x)
 		}
 	}
 	return true;
-}//ÅÐ¶ÏÃ¿Ò»ÐÐÊÇ·ñÓÐÖØ¸´
+}//åˆ¤æ–­æ¯ä¸€è¡Œæ˜¯å¦æœ‰é‡å¤
 
 bool checkY(int y)
 {
@@ -76,7 +239,7 @@ bool checkY(int y)
 		}
 	}
 	return true;
-}//ÅÐ¶ÏÃ¿Ò»ÁÐÊÇ·ñÓÐÖØ¸´
+}//åˆ¤æ–­æ¯ä¸€åˆ—æ˜¯å¦æœ‰é‡å¤
 
 bool judgeNine(int x, int y)
 {
@@ -101,7 +264,7 @@ bool judgeNine(int x, int y)
 		}
 	}
 	return true;
-}//ÅÐ¶Ï¾Å¹¬¸ñÊÇ·ñÓÐÖØ¸´£¨¸¨ÖúÅÐ¶Ï£©
+}//åˆ¤æ–­ä¹å®«æ ¼æ˜¯å¦æœ‰é‡å¤ï¼ˆè¾…åŠ©åˆ¤æ–­ï¼‰
 
 bool judge()
 {
@@ -142,7 +305,7 @@ bool judge()
 		return false;
 	}
 	return true;
-}//ÅÐ¶Ï¾Å¹¬¸ñÊÇ·ñÓÐÖØ¸´
+}//åˆ¤æ–­ä¹å®«æ ¼æ˜¯å¦æœ‰é‡å¤
 
 void dfs(int na, int nb)
 {
@@ -151,24 +314,7 @@ void dfs(int na, int nb)
 		if (judge() == true)
 		{
 			ans_num++;
-			cout << "½â" << ans_num << endl;
-			for (int i = 1; i <= 9; i++)
-			{
-				for (int j = 1; j <= 9; j++)
-				{
-					if ((i == 4 && j == 1) || (i == 7 && j == 1))
-					{
-						cout << "---------------------" << endl;
-					}
-					else if (j == 4 || j == 7)
-					{
-						cout << "| ";
-					}
-					cout << sudoku[i][j] << " ";
-				}
-				cout << endl;
-			}
-			cout << endl;
+			display_sudoku(sudoku);
 			return;
 		}
 	}
@@ -208,26 +354,22 @@ void dfs(int na, int nb)
 		na = nna, nb = nnb;
 		sudoku[nna][nnb] = 0;
 	}
-}//ËÑË÷Óë»ØËÝ
+}//æœç´¢ä¸Žå›žæº¯
 
-int main()
+
+int main(int argc, char* argv[])
 {
-	cout << "ÇëÊäÈë9¡Á9µÄÊý¶À" << endl;
-	for (int i = 1; i <= 9; i++)
-	{
-		for (int j = 1; j <= 9; j++)
-		{
-			cin >> sudoku[i][j];
-		}
-	}
+	/* Generating */
+	gen_seed_sudoku(seed_num);
+	/* Solving */
+	/*
 	dfs(1, 1);
-	if (ans_num == 0)
-	{
-		cout << "±¾Êý¶ÀÎÞ½â" << endl;
+	if (ans_num == 0) {
+		cout << "æœ¬æ•°ç‹¬æ— è§£" << endl;
 	}
-	else
-	{
-		cout << "¹²ÓÐ" << ans_num << "¸ö½â" << endl;
+	else {
+		cout << "å…±æœ‰" << ans_num << "ä¸ªè§£" << endl;
 	}
+	*/
 	return 0;
 }
