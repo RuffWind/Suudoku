@@ -6,6 +6,7 @@
 using namespace std;
 
 //#define DEBUG
+#define TEST
 
 ifstream  fin;
 ofstream fout;
@@ -472,6 +473,41 @@ bool solvePuzzle(int sudoku1[][11], string puzzle_path, string solution_path) {
 	return true;
 }
 
+// Testing
+void test() {
+	int index = 0;
+	int difficulty[4] = { 0,20,35,50 };  // The number of holes in different difficulty levels
+	// sudoku.exe -c 1
+	genSeedSudoku(1);
+	cout << "Finished test " << ++index << endl;
+	// sudoku.exe -c 400000
+	genSeedSudoku(400000);
+	cout << "Finished test " << ++index << endl;
+	// sudoku.exe -n 10000
+	genSeedSudoku(10000, true, 20);
+	cout << "Finished test " << ++index << endl;
+	// sudoku.exe -n 200 -m 1
+	genSeedSudoku(10000, true, difficulty[1]);
+	cout << "Finished test " << ++index << endl;
+	// sudoku.exe -n 200 -m 2 -u
+	genSeedSudoku(200, true, difficulty[2], true);
+	cout << "Finished test " << ++index << endl;
+	// sudoku.exe -n 200 -r 40
+	genSeedSudoku(200, true, 40, true);
+	cout << "Finished test " << ++index << endl;
+	// sudoku.exe -n 200 -r 30 -u
+	genSeedSudoku(200, true, 30, true);
+	cout << "Finished test " << ++index << endl;
+	// sudoku.exe -n 200 -r 20
+	genSeedSudoku(200, true, 20);
+	cout << "Finished test " << ++index << endl;
+	// sudoku.exe -s "puzzle.txt"
+	solvePuzzle(sudoku_global, "puzzle.txt", solution_path);
+	cout << "Finished test " << ++index << endl;
+	// sudoku.exe -s "invalid_path"
+	solvePuzzle(sudoku_global, "this_is_a_invalid_path", solution_path);
+	cout << "Finished test " << ++index << endl;
+}
 
 int main(int argc, char* argv[])
 {
@@ -491,13 +527,9 @@ int main(int argc, char* argv[])
 	* ### Constraints ###
 	* "-m" and "-r" must be used together with "-n"
 	*/
-#ifdef DEBUG
-	// Show args
-	cout << "argc: " << argc << endl;
-	for (int i = 0; i < argc; i++) {
-		cout << "argv[" << i << "]: " << argv[i] << endl;
-	}
-#endif
+#ifdef TEST
+	test();
+#else
 	// Argument handling
 	const string error_msg = "[Error] Bad arguments. For more help, read the instruction.\n";
 	string arg_path;  // puzzle path in the argument (-s)
@@ -581,4 +613,5 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 	return 0;
+#endif
 }
