@@ -17,10 +17,9 @@ const int sudoku_n = 9;  // The sudoku size is 9 * 9
 const string sudoku_path = "D:\\Codes\\vs2019\\Sudoku\\Sudoku\\data\\end_game.txt";  // Final sudokus
 const string puzzle_path = "D:\\Codes\\vs2019\\Sudoku\\Sudoku\\data\\puzzle.txt";  // Puzzles
 const string solution_path = "D:\\Codes\\vs2019\\Sudoku\\Sudoku\\data\\sudoku.txt";  // Answers of the puzzles
-int seed_num = 5;  // The number of seeds, and sudokus at the same time, to be generated
 
 /* Utilities */
-void inline display_seed(int* seed) {
+void inline displaySeed(int* seed) {
 	cout << "Seed: ";
 	for (int i = 0; i < 9; i++) {
 		cout << seed[i] << " ";
@@ -28,7 +27,7 @@ void inline display_seed(int* seed) {
 	cout << endl;
 }
 
-inline void display_sudoku(int sudoku[][11]) {
+inline void displaySudoku(int sudoku[][11]) {
 	for (int i = 1; i <= 9; i++) {
 		for (int j = 1; j <= 9; j++) {
 			if ((i == 4 && j == 1) || (i == 7 && j == 1)) {
@@ -49,7 +48,7 @@ inline void display_sudoku(int sudoku[][11]) {
 	cout << endl;
 }
 
-void save(int sudoku[][11], string path, bool is_first = false, int index = 0) {
+bool save(int sudoku[][11], string path, bool is_first = false, int index = 0) {
 	if (is_first) {
 		fout.open(path, ios::out);
 	}
@@ -58,6 +57,7 @@ void save(int sudoku[][11], string path, bool is_first = false, int index = 0) {
 	}
 	if (!fout.is_open()) {
 		std::cerr << "Cannot open the file!\n";
+		return false;
 	}
 	if (index > 0) {
 		fout << "Solution" << index << endl;
@@ -78,6 +78,7 @@ void save(int sudoku[][11], string path, bool is_first = false, int index = 0) {
 	}
 	fout << endl;
 	fout.close();
+	return true;
 }
 
 /* Solving */
@@ -199,7 +200,7 @@ void dfs(int sudoku[][11], int* ans_num = nullptr, int index = 0, int na = 1, in
 #ifdef DEBUG
 			if (index > 0) {
 				cout << "Solution " << CUR_PUZZLE_NO + 1 << ": \n";
-				display_sudoku(sudoku);
+				displaySudoku(sudoku);
 			}
 #endif
 			return;
@@ -238,7 +239,7 @@ void dfs(int sudoku[][11], int* ans_num = nullptr, int index = 0, int na = 1, in
 
 /* Generating */
 // Generat a sudoku with a seed
-void gen_sudoku(int sudoku[][11], int* seed) {
+void genSudoku(int sudoku[][11], int* seed) {
 	// Step 1: Generate the very middle cell of the sudoku with a 9-length seed (1D array)
 	int si = 0;
 	for (int i = 4; i <= 6; i++) {
@@ -331,7 +332,7 @@ void gen_sudoku(int sudoku[][11], int* seed) {
 }
 
 // Generate a puzzle by digging "hole_num" holes in a sudoku generated before
-void gen_puzzle(int sudoku[][11], int hole_num, bool need_unique=false) {
+void genPuzzle(int sudoku[][11], int hole_num, bool need_unique=false) {
 	for (int i = 0; i < hole_num; i++) {
 		int rand_r, rand_c;
 		while(true) {
@@ -366,7 +367,7 @@ int res[9];  // Record the result
 bool line[10] = { false };  // Record whether a number has been included in array "res"
 int cur_seed_num = 0;  // The number of seeds generated for now
 bool has_printed = false;
-void gen_seed_sudoku(int seed_num, bool is_puzzle = false, int hole_num = 0, bool need_unique = false, int max_n = sudoku_n, int index = 0) {
+void genSeedSudoku(int seed_num, bool is_puzzle = false, int hole_num = 0, bool need_unique = false, int max_n = sudoku_n, int index = 0) {
 	// Param "index" should be 0 while using this function from outside scope.  
 	if (cur_seed_num >= seed_num) {
 		if (!has_printed) {
@@ -379,13 +380,13 @@ void gen_seed_sudoku(int seed_num, bool is_puzzle = false, int hole_num = 0, boo
 		for (int i = 0; i < max_n; i++) {
 			seed[i] = res[i];
 		}
-		gen_sudoku(sudoku_global, seed);
+		genSudoku(sudoku_global, seed);
 		if (is_puzzle) {
 			srand(time(0) + cur_seed_num);
-			gen_puzzle(sudoku_global, hole_num, need_unique);
+			genPuzzle(sudoku_global, hole_num, need_unique);
 #ifdef DEBUG
 			cout << "Puzzle " << cur_seed_num + 1 << ": \n";
-			display_sudoku(sudoku_global);
+			displaySudoku(sudoku_global);
 #endif
 			save(sudoku_global, puzzle_path, cur_seed_num == 0 ? true : false, -cur_seed_num - 1);
 		}
@@ -399,7 +400,7 @@ void gen_seed_sudoku(int seed_num, bool is_puzzle = false, int hole_num = 0, boo
 		if (line[i] == false) {
 			res[index] = i;
 			line[i] = true;
-			gen_seed_sudoku(seed_num, is_puzzle, hole_num, need_unique, max_n, index + 1);
+			genSeedSudoku(seed_num, is_puzzle, hole_num, need_unique, max_n, index + 1);
 			line[i] = false;
 		}
 	}
@@ -407,10 +408,11 @@ void gen_seed_sudoku(int seed_num, bool is_puzzle = false, int hole_num = 0, boo
 
 
 // Application
-void solve_puzzle(int sudoku1[][11], string puzzle_path, string solution_path) {
+bool solvePuzzle(int sudoku1[][11], string puzzle_path, string solution_path) {
 	fin.open(puzzle_path, ios::in);
 	if (!fin.is_open()) {
 		std::cerr << "Cannot open the file!\n";
+		return false;
 	}
 	int index = 0;  // Record where we are
 	char buf[1024] = { 0 };
@@ -433,13 +435,116 @@ void solve_puzzle(int sudoku1[][11], string puzzle_path, string solution_path) {
 		}
 	}
 	fin.close();
+	return true;
 }
 
 
 int main(int argc, char* argv[])
 {
-	/* Generating */
-	gen_seed_sudoku(seed_num, true, 30, true);
-	solve_puzzle(sudoku_global, puzzle_path, solution_path);
+	/* ----------------- */
+	/* All possible argument situations: */
+	/*
+	* --- argc == 3 ---
+	* sudoku.exe -c [1-1000000]  # Generate end_game
+	* sudoku.exe -s [path]       # Solve puzzles in [path]
+	* sudoku.exe -n [1-10000]    # Generate puzzles
+	* --- argc == 5 ---
+	* sudoku.exe -n [1-10000] -m [1-3]   # Define difficulty
+	* sudoku.exe -n [1-10000] -r [20-55] # Define holes to be dug
+	* ##### If argc is 4 or 6, there is supposed to be a "-u" #####
+	* sudoku.exe -n [1-10000] -u
+	* sudoku.exe -n [1-10000] -r [20-55] -u
+	* ### Constraints ###
+	* "-m" and "-r" must be used together with "-n"
+	*/
+#ifdef DEBUG
+	// Show args
+	cout << "argc: " << argc << endl;
+	for (int i = 0; i < argc; i++) {
+		cout << "argv[" << i << "]: " << argv[i] << endl;
+	}
+#endif
+	// Argument handling
+	const string error_msg = "[Error] Bad arguments. For more help, read the instruction.\n";
+	string arg_path;  // puzzle path in the argument (-s)
+	int seed_num = 0;  // The number of seeds, and sudokus at the same time, to be generated (-c/-n)
+	bool need_unique = false;  // Whether each puzzle must have a unique solution (-u)
+	int difficulty[4] = { 0,20,35,50 };  // The number of holes in different difficulty levels
+	switch (argc) {
+	case 4:
+		if (strcmp(argv[3], "-u")) {
+			cout << error_msg;
+			return 1;
+		}
+		need_unique = true;
+	case 3:
+		if (!strcmp(argv[1], "-c")) {
+			seed_num = atoi(argv[2]);  // Bad char[] will be converted to 0 automatically
+			if (seed_num < 1 || seed_num>1000000) {
+				cout << error_msg;
+				return 1;
+			}
+			genSeedSudoku(seed_num);
+		}
+		else if (!strcmp(argv[1], "-s")) {
+			arg_path = argv[2];
+			if (!solvePuzzle(sudoku_global, arg_path, solution_path)) {
+				return 1;
+			};
+		}
+		else if (!strcmp(argv[1], "-n")) {
+			seed_num = atoi(argv[2]);
+			if (seed_num < 1 || seed_num>10000) {
+				cout << error_msg;
+				return 1;
+			}
+			genSeedSudoku(seed_num, true, 20, need_unique);  // Dig 20 holes by default
+		}
+		else {
+			cout << error_msg;
+			return 1;
+		}
+		break;
+	case 6:
+		if (strcmp(argv[5], "-u")) {
+			cout << error_msg;
+			return 1;
+		}
+		need_unique = true;
+	case 5:
+		if (strcmp(argv[1], "-n")) {
+			cout << error_msg;
+			return 1;
+		}
+		seed_num = atoi(argv[2]);
+		if (seed_num < 1 || seed_num>10000) {
+			cout << error_msg;
+			return 1;
+		}
+		if (!strcmp(argv[3], "-m")) {
+			int level = atoi(argv[4]);
+			if (level < 1 || level >3) {
+				cout << error_msg;
+				return 1;
+			}
+			genSeedSudoku(seed_num, true, difficulty[level], need_unique);
+		}
+		else if (!strcmp(argv[3], "-r")) {
+			int hole_num = atoi(argv[4]);
+			if (hole_num < 20 || hole_num >55) {
+				cout << error_msg;
+				return 1;
+			}
+			genSeedSudoku(seed_num, true, hole_num, need_unique);
+		}
+		else {
+			cout << error_msg;
+			return 1;
+		}
+		break;
+	default:
+		cout << error_msg;
+		return 1;
+	}
 	return 0;
 }
