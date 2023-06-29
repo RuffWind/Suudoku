@@ -5,7 +5,7 @@
 #include <cstdlib>
 using namespace std;
 
-#define DEBUG
+//#define DEBUG
 
 ifstream  fin;
 ofstream fout;
@@ -18,7 +18,7 @@ const string sudoku_path = "data/end_game.txt";  // Final sudokus
 const string puzzle_path = "data/puzzle.txt";  // Puzzles
 const string solution_path = "data/sudoku.txt";  // Answers of the puzzles
 
-void inline displaySeed(int* seed) {
+inline void displaySeed(int* seed) {
 	cout << "Seed: ";
 	for (int i = 0; i < 9; i++) {
 		cout << seed[i] << " ";
@@ -381,18 +381,53 @@ void genSeedSudoku(int seed_num, bool is_puzzle = false, int hole_num = 0, bool 
 		}
 		genSudoku(sudoku_global, seed);
 		if (is_puzzle) {
-			srand(time(0) + cur_seed_num);
+			srand((unsigned)time(0) + cur_seed_num);
 			genPuzzle(sudoku_global, hole_num, need_unique);
 #ifdef DEBUG
 			cout << "Puzzle " << cur_seed_num + 1 << ": \n";
 			displaySudoku(sudoku_global);
 #endif
 			save(sudoku_global, puzzle_path, cur_seed_num == 0 ? true : false, -cur_seed_num - 1);
+			cur_seed_num++;
+			// Exchange rows and columns to avoid similarity when seed number is small
+			if (seed_num - cur_seed_num >= 2) {
+				for (int i = 1; i <= sudoku_n; i++) {
+					int tmp = sudoku_global[i][4];
+					sudoku_global[i][4] = sudoku_global[i][6];
+					sudoku_global[i][6] = tmp;
+				}
+				save(sudoku_global, puzzle_path, cur_seed_num == 0 ? true : false, -cur_seed_num - 1);
+				cur_seed_num++;
+				for (int j = 1; j <= sudoku_n; j++) {
+					int tmp = sudoku_global[4][j];
+					sudoku_global[4][j] = sudoku_global[6][j];
+					sudoku_global[6][j] = tmp;
+				}
+				save(sudoku_global, puzzle_path, cur_seed_num == 0 ? true : false, -cur_seed_num - 1);
+				cur_seed_num++;
+			}
 		}
 		else {
 			save(sudoku_global, sudoku_path, cur_seed_num == 0 ? true : false);
+			cur_seed_num++;
+			// Exchange rows and columns to generate more sudokus (362880 + 362880 * 2 > 1000000)
+			if (seed_num > 362880 && seed_num - cur_seed_num >= 2) {
+				for (int i = 1; i <= sudoku_n; i++) {
+					int tmp = sudoku_global[i][1];
+					sudoku_global[i][1] = sudoku_global[i][3];
+					sudoku_global[i][3] = tmp;
+				}
+				save(sudoku_global, sudoku_path, cur_seed_num == 0 ? true : false);
+				cur_seed_num++;
+				for (int j = 1; j <= sudoku_n; j++) {
+					int tmp = sudoku_global[1][j];
+					sudoku_global[1][j] = sudoku_global[3][j];
+					sudoku_global[3][j] = tmp;
+				}
+				save(sudoku_global, sudoku_path, cur_seed_num == 0 ? true : false);
+				cur_seed_num++;
+			}
 		}
-		cur_seed_num++;
 		return;
 	}
 	for (int i = 1; i <= max_n; i++) {
