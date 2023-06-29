@@ -14,9 +14,9 @@ int sudoku_global[11][11];  // Sudoku, a 2d rray
 int seed[9];  // A seed used for generating a sudoku (Actually it is the order of the 9 numbers in the very middle cell of a sudoku. )
 const int sudoku_n = 9;  // The sudoku size is 9 * 9
 /* config */
-const string sudoku_path = "data/end_game.txt";  // Final sudokus
-const string puzzle_path = "data/puzzle.txt";  // Puzzles
-const string solution_path = "data/sudoku.txt";  // Answers of the puzzles
+const string sudoku_path = "end_game.txt";  // Final sudokus
+const string puzzle_path = "puzzle.txt";  // Puzzles
+const string solution_path = "sudoku.txt";  // Answers of the puzzles
 
 inline void displaySeed(int* seed) {
 	cout << "Seed: ";
