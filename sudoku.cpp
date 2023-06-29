@@ -14,11 +14,10 @@ int sudoku_global[11][11];  // Sudoku, a 2d rray
 int seed[9];  // A seed used for generating a sudoku (Actually it is the order of the 9 numbers in the very middle cell of a sudoku. )
 const int sudoku_n = 9;  // The sudoku size is 9 * 9
 /* config */
-const string sudoku_path = "D:\\Codes\\vs2019\\Sudoku\\Sudoku\\data\\end_game.txt";  // Final sudokus
-const string puzzle_path = "D:\\Codes\\vs2019\\Sudoku\\Sudoku\\data\\puzzle.txt";  // Puzzles
-const string solution_path = "D:\\Codes\\vs2019\\Sudoku\\Sudoku\\data\\sudoku.txt";  // Answers of the puzzles
+const string sudoku_path = "data/end_game.txt";  // Final sudokus
+const string puzzle_path = "data/puzzle.txt";  // Puzzles
+const string solution_path = "data/sudoku.txt";  // Answers of the puzzles
 
-/* Utilities */
 void inline displaySeed(int* seed) {
 	cout << "Seed: ";
 	for (int i = 0; i < 9; i++) {
@@ -480,7 +479,7 @@ int main(int argc, char* argv[])
 	case 3:
 		if (!strcmp(argv[1], "-c")) {
 			seed_num = atoi(argv[2]);  // Bad char[] will be converted to 0 automatically
-			if (seed_num < 1 || seed_num>1000000) {
+			if (seed_num < 1 || seed_num>1000000 || need_unique) {
 				cout << error_msg;
 				return 1;
 			}
